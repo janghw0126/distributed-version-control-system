@@ -1,11 +1,21 @@
 const init = require('./commands/init.js');
+const add = require('./commands/add.js');
 
-// 사용자가 입력한 순수 명령어 받음 -> init
+// 사용자가 입력한 순수 명령어 받음
 const args = process.argv.slice(2);
 
-// 사용자가 입력한 명령이 init인지 체크
-if (args[0] === 'init') {
-  init();
-} else {
-  console.log('Unknown command');
+const command = args[0];
+const filepath = args[1];
+
+switch (command) {
+  case 'init':
+    init();
+    break;
+
+  case 'add':
+    add(filepath);
+    break;
+
+  default:
+    console.log(`${command} : 존재하지 않는 명령어입니다.`);
 }
