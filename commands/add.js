@@ -58,15 +58,15 @@ function add(filepath) {
 
   // 같은 파일이 index에 이미 있는지 찾기
   const updatedLines = [];
-  let found = false;
+  let oldFilefound = false;
 
   // index 파일 업데이트
   for (const line of lines) {
     const [oldHash, oldPath] = line.split(' ');
 
+    // 파일이 이미 스테이지에 있던 경우
     if (oldPath === filepath) {
-      // 파일이 이미 스테이지에 있던 경우
-      found = true;
+      oldFilefound = true;
       if (oldHash !== hash) {
         console.log('스테이지된 파일이 수정되었습니다.');
         updatedLines.push(`${hash} ${filepath}`);
@@ -74,13 +74,15 @@ function add(filepath) {
         console.log('파일이 이미 스테이지에 있습니다.');
         updatedLines.push(line);
       }
-    } else {
+    }
+    // 파일이 스테이지에 없는 경우
+    else {
       updatedLines.push(line);
     }
   }
 
   // 새로운 파일일 때
-  if (!found) {
+  if (!oldFilefound) {
     console.log('새로운 파일이 스테이지에 추가되었습니다.');
     updatedLines.push(`${hash} ${filepath}`);
   }
