@@ -41,6 +41,25 @@ function commit(message) {
     const [hash, filepath] = line.split(' ');
     return { hash, filepath };
   });
+
+  // tree 객체 생성하기
+  for (const entry of entries) {
+    treeContent += `100644 blob ${entry.hash} ${entry.filepath}\n`;
+  }
+
+  const treeHash = sha1(treeContent);
+  const treeDir = treeHash.substring(0, 2);
+  const treeFile = treeHash.substring(2);
+  const treePath = path.join(objectsPath, treeDir);
+
+  if (!fs.existsSync(treePath)) {
+    fs.mkdirSync(treePath, { recursive: true });
+  }
+
+  const treeObjectPath = path.join(treePath, treeFile);
+  if (!fs.existsSync(treeObjectPath)) {
+    fs.writeFileSync(treeObjectPath, treeContent);
+  }
 }
 
 module.exports = commit;
