@@ -2,6 +2,71 @@ const fs = require('fs');
 const path = require('path');
 const sha1 = require('../utils/sha1');
 
+// 디렉토리 트리 생성
+function buildFolder(entries) {
+  const root = {};
+
+  for (const { hash, filepath } of entries) {
+    const parts = filepath.split('/');
+    let current_folder = root;
+
+    // 마지막 파일명을 제외한 디렉토리 경로 생성
+    for (let i = 0; i < parts.length - 1; i++) {
+      const folder = parts[i];
+      if (!current_folder[folder]) current_folder[folder] = {};
+      current_folder = current_folder[folder];
+    }
+
+    // 마지막 파일 -> blob 해시로 저장
+    const fileName = parts[parts.length - 1];
+    current_folder[fileName] = hash;
+  }
+
+  return root;
+}
+
+// tree 객체 생성
+function generateTree(node, objectsPath) {
+  const lines = [];
+
+  // 동일한 tree 생성을 위해 정렬
+  const names = Object.keys(node).sort();
+
+  for (const name of names) {
+    const value = node[name];
+
+    if (typeof value === 'string') {
+      // 파일이면 blob
+      lines.push(`100644 blob ${value} ${name}`);
+    } else {
+      // 폴더면 blob로 남을 때까지 재귀 호출
+      const subtreeHash = generateTree(value, objectsPath);
+      lines.push(`040000 tree ${subtreeHash} ${name}`);
+    }
+  }
+
+  // tree 객체 생성해서 해시화
+  const treeContent = lines.join('\n') + '\n';
+  const treeHash = sha1(treeContent);
+
+  const dir = treeHash.substring(0, 2);
+  const file = treeHash.substring(2);
+  const folderPath = path.join(objectsPath, dir);
+
+  if (!fs.existsSync(folderPath)) {
+    fs.mkdirSync(folderPath, { recursive: true });
+  }
+
+  const treeObjectPath = path.join(folderPath, file);
+
+  // 중복 tree 객체 있는 경우 -> 이미 있으니 생성 X
+  if (!fs.existsSync(treeObjectPath)) {
+    fs.writeFileSync(treeObjectPath, treeContent);
+  }
+
+  return treeHash;
+}
+
 function commit(message) {
   const repoPath = path.join(process.cwd(), '.vcs');
   const indexPath = path.join(repoPath, 'index');
@@ -32,27 +97,13 @@ function commit(message) {
     return { hash, filepath };
   });
 
-  // tree 객체 만들기
-  let treeContent = '';
-  for (const entry of entries) {
-    treeContent += `100644 blob ${entry.hash} ${entry.filepath}\n`;
-  }
+  // index -> json 형태로 폴더 구조 만들기
+  const treeStructure = buildFolder(entries);
 
-  const treeHash = sha1(treeContent);
-  const treeDir = treeHash.substring(0, 2);
-  const treeFile = treeHash.substring(2);
-  const treeFolder = path.join(objectsPath, treeDir);
+  // tree 객체 만들고 해시 반환
+  const treeHash = generateTree(treeStructure, objectsPath);
 
-  if (!fs.existsSync(treeFolder)) {
-    fs.mkdirSync(treeFolder, { recursive: true });
-  }
-
-  const treeObjectPath = path.join(treeFolder, treeFile);
-  if (!fs.existsSync(treeObjectPath)) {
-    fs.writeFileSync(treeObjectPath, treeContent);
-  }
-
-  // 부모 객체 불러오기
+  // 부모 commit 해시 불러오기
   let parent = '';
   if (fs.existsSync(headPath)) {
     parent = fs.readFileSync(headPath, 'utf-8').trim();
@@ -64,6 +115,27 @@ function commit(message) {
   commitContent += `message ${message}\n`;
 
   const commitHash = sha1(commitContent);
+
+  // 최신 상태인지 확인하기
+  let prevTree = '';
+  if (parent) {
+    const parentDir = parent.substring(0, 2);
+    const parentFile = parent.substring(2);
+    const parentCommitPath = path.join(objectsPath, parentDir, parentFile);
+
+    if (fs.existsSync(parentCommitPath)) {
+      const parentContent = fs.readFileSync(parentCommitPath, 'utf-8');
+      const firstLine = parentContent.split('\n')[0];
+      prevTree = firstLine.split(' ')[1];
+    }
+  }
+
+  if (prevTree === treeHash) {
+    console.log('이미 최신 상태입니다.');
+    return;
+  }
+
+  // commit 객체 저장
   const commitDir = commitHash.substring(0, 2);
   const commitFile = commitHash.substring(2);
   const commitFolder = path.join(objectsPath, commitDir);
@@ -77,7 +149,6 @@ function commit(message) {
 
   // HEAD 업데이트하기
   fs.writeFileSync(headPath, commitHash);
-
   console.log(`새 커밋이 생성되었습니다. ${commitHash}`);
 }
 
