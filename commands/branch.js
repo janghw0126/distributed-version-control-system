@@ -15,6 +15,11 @@ function branch(branchName) {
   // HEAD가 가리키는 대상 읽기
   const headContent = fs.readFileSync(headPath, 'utf-8').trim();
 
+  if (!headContent) {
+    console.log('현재 HEAD가 비어 있습니다. 커밋 후 브랜치를 생성하세요.');
+    return;
+  }
+
   // HEAD를 읽어서 브랜치 만들기
   let currentCommit = '';
 
