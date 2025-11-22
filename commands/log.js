@@ -22,7 +22,23 @@ function log() {
   }
 
   // HEAD에서 최신 커밋 해시 읽기
-  let currentCommitHash = fs.readFileSync(headPath, 'utf-8').trim();
+  const headContent = fs.readFileSync(headPath, 'utf-8').trim();
+  let currentCommitHash = '';
+
+  if (headContent.startsWith('ref: ')) {
+    // 브랜치를 가리키는 경우 -> 브랜치 경로에서 커밋 해시 읽기
+    const refsPath = headContent.substring('ref: '.length).trim();
+    const branchPath = path.join(repoPath, refsPath);
+
+    if (!fs.existsSync(branchPath)) {
+      console.log('브랜치 정보가 손상되었습니다.');
+      return;
+    }
+
+    currentCommitHash = fs.readFileSync(branchPath, 'utf-8').trim();
+  } else {
+    currentCommitHash = headContent;
+  }
 
   // parent 객체 따라가면서 commit 기록 추출하기
   while (currentCommitHash) {
