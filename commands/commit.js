@@ -92,6 +92,11 @@ function commit(message) {
     .split('\n')
     .filter((line) => line.length > 0);
 
+  if (indexLines.length === 0) {
+    console.log('스테이지에 올라간 파일이 없습니다.');
+    return;
+  }
+
   const entries = indexLines.map((line) => {
     const [hash, filepath] = line.split(' ');
     return { hash, filepath };
