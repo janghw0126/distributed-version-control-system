@@ -5,14 +5,14 @@ const log = require('./commands/log.js');
 const branch = require('./commands/branch.js');
 const checkout = require('./commands/checkout.js');
 const status = require('./commands/status.js');
+const merge = require('./commands/merge');
 
 // 사용자가 입력한 순수 명령어 받음
 const args = process.argv.slice(2);
 
 const command = args[0];
-const filepath = args[1];
-const message = args.slice(1);
-const branchName = args[1];
+const arg1 = args[1];
+const rest = args.slice(1);
 
 switch (command) {
   case 'init':
@@ -20,11 +20,11 @@ switch (command) {
     break;
 
   case 'add':
-    add(filepath);
+    add(arg1);
     break;
 
   case 'commit':
-    commit(message);
+    commit(rest);
     break;
 
   case 'log':
@@ -32,15 +32,19 @@ switch (command) {
     break;
 
   case 'branch':
-    branch(branchName);
+    branch(arg1);
     break;
 
   case 'checkout':
-    checkout(branchName);
+    checkout(arg1);
     break;
 
   case 'status':
     status();
+    break;
+
+  case 'merge':
+    merge(arg1);
     break;
 
   default:
