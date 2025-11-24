@@ -142,7 +142,7 @@ Blob, Tree, Commit 객체를 `objects/` 아래에 저장하는 구조로 구현�
 ```
 
 ###  .dvcs 내부 객체 구조
-<img width="321" height="503" alt="image" src="https://github.com/user-attachments/assets/cbb05c68-23af-45c3-88d8-3c77ea9ae1e4" />
+<img width="250" height="420" alt="image" src="https://github.com/user-attachments/assets/cbb05c68-23af-45c3-88d8-3c77ea9ae1e4" />
 
 #### 1. Blob
 파일의 내용 그 자체를 SHA-1 함수를 통해 해싱하여 저장합니다.
@@ -367,7 +367,7 @@ npm run test
 
 - merge의 동작 원리를 이해하게 되었습니다. Fast-forward merge는 성공적으로 구현했으나, 공통 조상 기반의 3-way merge는 구현 난이도가 높아 완전히 구현하지 못했습니다. 하지만 3-way merge 시도 과정에서 Git 내부 알고리즘의 복잡성을 깊이 이해할 수 있었습니다.
 
-- index(스테이징 영역)가 존재하는 이유를 알게 되었습니다.
+- index 영역이 존재하는 이유를 알게 되었습니다. 이 영역이 단순한 임시 저장 공간이 아니라, 워킹 디렉토리와 Commit 간의 불일치를 파악하고 사용자가 변경한 내용만 정확하게 스냅샷으로 기록하기 위한 핵심 구조라는 것을 알게 되었습니다. 직접 구현해보며 Git이 안정적으로 코드를 관리할 수 있는 이유가 바로 이 index 구조 덕분이라는 점을 깊이 이해할 수 있었습니다.
 
 ---
 
